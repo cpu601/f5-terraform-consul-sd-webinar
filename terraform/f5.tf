@@ -43,4 +43,3 @@ data "template_file" "f5_init" {
     onboard_log = var.onboard_log,
   }
 }
-
