@@ -17,3 +17,8 @@ output "F5_UI" {
 output "Consul_UI" {
   value = "http://${aws_instance.consul.public_ip}:8500"
 }
+
+
+output "F5_SSH" {
+  value = "ssh admin@${aws_eip.f5.public_ip} -i ${aws_key_pair.demo.key_name}.pem"
+}

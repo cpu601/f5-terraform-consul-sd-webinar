@@ -2,14 +2,18 @@ resource "random_string" "password" {
   length  = 10
   special = false
 }
+data "aws_ami" "f5_ami" {
+  most_recent = true
+  owners      = ["679593333241"]
 
+  filter {
+    name   = "name"
+    values = ["${var.f5_ami_search_name}"]
+  }
+}
 resource "aws_instance" "f5" {
 
-  # F5 BIGIP-15.0.1.1-0.0.3 PAYG-Good 25Mbps-191118135436 for AWS region eu-central-1
-  # ami = "ami-0f175be61eaf4f898"
-  
-  # F5 BIGIP-15.0.1.1-0.0.3 PAYG-Good 25Mbps-191118135436 for AWS region us-east-1
-  ami = "ami-00eeec1a00568822c"
+  ami                         = "${data.aws_ami.f5_ami.id}"
 
   instance_type               = "m5.xlarge"
   private_ip                  = "10.0.0.200"
@@ -24,13 +28,19 @@ resource "aws_instance" "f5" {
     Name = "${var.prefix}-f5"
     Env  = "consul"
   }
-
 }
 
 data "template_file" "f5_init" {
-  template = "${file("../scripts/f5.tpl")}"
+  template = "${file("../scripts/f5_onboard.tmpl")}"
 
   vars = {
-    password = "${random_string.password.result}"
+    secret_id   = var.aws_secretmanager_secret_id
+    DO_URL      = var.DO_URL,
+    AS3_URL     = var.AS3_URL,
+    TS_URL      = var.TS_URL,
+    CFE_URL      = var.CFE_URL,
+    libs_dir    = var.libs_dir,
+    onboard_log = var.onboard_log,
   }
 }
+
