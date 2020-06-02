@@ -3,11 +3,11 @@ output "f5_ip" {
 }
 
 output "f5_password" {
-  value = "${data.aws_secretsmanager_secret_version.bigip_password.secret_string}"
+  value = "${random_string.password.result}"
 }
 
 output "f5_username" {
-  value = "admin"
+  value = "${var.username}"
 }
 
 output "f5_ui" {

@@ -60,7 +60,6 @@ resource "aws_iam_role" "bigip_role" {
   }
 }
 
-
 data "aws_iam_policy_document" "bigip_role" {
   version = "2012-10-17"
   statement {
@@ -74,26 +73,26 @@ data "aws_iam_policy_document" "bigip_role" {
   }
 }
 
+# resource "aws_iam_role_policy" "bigip_policy" {
+#   name   = "${var.prefix}-bigip-policy"
+#   role   = aws_iam_role.bigip_role.id
+#   policy = data.aws_iam_policy_document.bigip_policy.json
+# }
+
+# data "aws_iam_policy_document" "bigip_policy" {
+#   version = "2012-10-17"
+#   statement {
+#     actions = [
+#       "secretsmanager:GetSecretValue"
+#     ]
+
+#     resources = [
+#       "${data.aws_secretsmanager_secret.bigip_password.arn}"
+#     ]
+#   }
+# }
+
 resource "aws_iam_instance_profile" "bigip_profile" {
   name = "${var.prefix}-bigip-profile"
   role = aws_iam_role.bigip_role.name
-}
-
-data "aws_iam_policy_document" "bigip_policy" {
-  version = "2012-10-17"
-  statement {
-    actions = [
-      "secretsmanager:GetSecretValue"
-    ]
-
-    resources = [
-      "${data.aws_secretsmanager_secret.bigip_password.arn}"
-    ]
-  }
-}
-
-resource "aws_iam_role_policy" "bigip_policy" {
-  name   = "${var.prefix}-bigip-policy"
-  role   = aws_iam_role.bigip_role.id
-  policy = data.aws_iam_policy_document.bigip_policy.json
 }

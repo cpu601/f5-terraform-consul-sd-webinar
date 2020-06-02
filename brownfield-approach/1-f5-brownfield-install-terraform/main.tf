@@ -1,3 +1,9 @@
+terraform {
+  required_providers {
+    bigip = "= 1.1.2"
+  }
+}
+
 data "terraform_remote_state" "aws_demo" {
   backend = "local"
 

@@ -3,16 +3,6 @@ resource "random_string" "password" {
   special = false
 }
 
-# Get ARN for secret to allow BIG-IP to access it
-data "aws_secretsmanager_secret" "bigip_password" {
-  name = var.aws_secretmanager_secret_id
-}
-
-# Get the secret value itself
-data "aws_secretsmanager_secret_version" "bigip_password" {
-  secret_id = var.aws_secretmanager_secret_id
-}
-
 data "aws_ami" "f5_ami" {
   most_recent = true
   owners      = ["679593333241"]
@@ -40,18 +30,22 @@ resource "aws_instance" "f5" {
     Name = "${var.prefix}-f5"
     Env  = "consul"
   }
+
+  provisioner "local-exec" {
+    command = "while [[ \"$(curl -skiu ${var.username}:${random_string.password.result} https://${self.public_ip}:${var.port}/mgmt/shared/appsvcs/declare | grep -Eoh \"^HTTP/1.1 204\")\" != \"HTTP/1.1 204\" ]]; do sleep 5; done"
+  }
 }
 
 data "template_file" "f5_init" {
   template = "${file("../scripts/f5_onboard.tmpl")}"
 
   vars = {
-    secret_id    = "${var.aws_secretmanager_secret_id}"
     DO_URL       = "${var.DO_URL}",
     AS3_URL      = "${var.AS3_URL}",
     TS_URL       = "${var.TS_URL}",
     CFE_URL      = "${var.CFE_URL}",
     libs_dir     = "${var.libs_dir}",
     onboard_log  = "${var.onboard_log}",
+    password     = "${random_string.password.result}"
   }
 }

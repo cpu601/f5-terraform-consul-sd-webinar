@@ -36,10 +36,10 @@ data "template_file" "tfvars" {
   }
 }
 
-resource "local_file" "tfvars-as3" {
-  content  = data.template_file.tfvars.rendered
-  filename = "../as3/terraform.tfvars"
-}
+# resource "local_file" "tfvars-as3" {
+#   content  = data.template_file.tfvars.rendered
+#   filename = "../as3/terraform.tfvars"
+# }
 
 # Generate a tfvars file for "brownfield-approach" installation
 #resource "local_file" "tfvars-b1" {
