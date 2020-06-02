@@ -1,24 +1,24 @@
-output "F5_IP" {
+output "f5_ip" {
   value = "${aws_eip.f5.public_ip}"
 }
 
-output "F5_Password" {
-  value = "${random_string.password.result}"
+output "f5_password" {
+  value = "${data.aws_secretsmanager_secret_version.bigip_password.secret_string}"
 }
 
-output "F5_Username" {
+output "f5_username" {
   value = "admin"
 }
 
-output "F5_UI" {
-  value = "https://${aws_eip.f5.public_ip}:8443"
+output "f5_ui" {
+  value = "https://${aws_eip.f5.public_ip}:${var.port}"
 }
 
-output "Consul_UI" {
+output "consul_ui" {
   value = "http://${aws_instance.consul.public_ip}:8500"
 }
 
 
-output "F5_SSH" {
+output "f5_ssh" {
   value = "ssh admin@${aws_eip.f5.public_ip} -i ${aws_key_pair.demo.key_name}.pem"
 }

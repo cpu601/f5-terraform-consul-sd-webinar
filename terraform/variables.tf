@@ -13,6 +13,16 @@ variable "aws_secretmanager_secret_id" {
   default = "my_bigip_password"
 }
 
+variable "username" { 
+  description = "big-ip username"
+  default = "admin"
+}
+
+variable "port" { 
+  description = "name of preconfigured AWS secret, containing password"
+  default = "8443"
+}
+
 # Please check and update the latest DO URL from https://github.com/F5Networks/f5-declarative-onboarding/releases
 # always point to a specific version in order to avoid inadvertent configuration inconsistency
 variable DO_URL {
@@ -45,9 +55,8 @@ variable CFE_URL {
   default     = "https://github.com/F5Networks/f5-cloud-failover-extension/releases/download/v1.3.0/f5-cloud-failover-1.3.0-0.noarch.rpm"
 }
 
-
 variable "libs_dir" {
-  description = "Directory on the BIG-IP to download the A&O Toolchain into"
+  description = "Destination directory on the BIG-IP to download the A&O Toolchain RPMs"
   type        = string
   default     = "/config/cloud/aws/node_modules"
 }

@@ -46,6 +46,15 @@ export AWS_TOKEN=$(printf "$payload" | jq -r ".Token")
 export AWS_REGION=`curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone| sed s/.$//`
 export SECRET_ID=${secret_id}
 
+echo "***-OUTPUT SECRETS-***"
+echo $role_name
+echo $payload
+echo $AWS_ACCESS_KEY_ID
+echo $AWS_SECRET_ACCESS_KEY
+echo $AWS_TOKEN
+echo $AWS_REGION
+echo $SECRET_ID
+
 ### WRITE PYTHON FILE TO DISK
 cat > secrets_manager.py << END_TEXT
 # Copyright 2010-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
