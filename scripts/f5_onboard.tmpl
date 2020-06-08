@@ -1,0 +1,112 @@
+#!/bin/bash
+
+# Script must be non-blocking or run in the background.
+
+mkdir -p /config/cloud
+
+cat << 'EOF' > /config/cloud/startup-script.sh
+
+#!/bin/bash
+
+# BIG-IPS ONBOARD SCRIPT
+
+LOG_FILE=${onboard_log}
+
+if [ ! -e $LOG_FILE ]
+then
+     touch $LOG_FILE
+     exec &>>$LOG_FILE
+else
+    #if file exists, exit as only want to run once
+    exit
+fi
+
+exec 1>$LOG_FILE 2>&1
+
+# WAIT FOR BIG-IP SYSTEMS & API TO BE UP
+curl -o /config/cloud/utils.sh -s --fail --retry 60 -m 10 -L https://raw.githubusercontent.com/F5Networks/f5-cloud-libs/develop/scripts/util.sh
+. /config/cloud/utils.sh
+wait_for_bigip
+
+### CHECK IF DNS IS CONFIGURED YET, IF NOT, SLEEP
+echo "CHECK THAT DNS IS READY"
+nslookup github.com
+if [ $? -ne 0 ]; then
+  echo "DNS NOT READY, SLEEP 30 SECS"
+  sleep 30
+fi
+
+### SET BIG-IP PASSWORD
+echo "SET THE BIG-IP PASSWORD"
+pwd=${password}
+if [ -z "$pwd" ]
+then
+  echo "ERROR: UNABLE TO OBTAIN PASSWORD"
+else
+  tmsh modify auth user admin password $pwd
+fi
+
+### DOWNLOAD ONBOARDING PKGS
+# Could be pre-packaged or hosted internally
+mkdir -p ${libs_dir}
+
+DO_URL='${DO_URL}'
+DO_FN=$(basename "$DO_URL")
+AS3_URL='${AS3_URL}'
+AS3_FN=$(basename "$AS3_URL")
+TS_URL='${TS_URL}'
+TS_FN=$(basename "$TS_URL")
+CFE_URL='${CFE_URL}'
+CFE_FN=$(basename "$CFE_URL")
+
+echo -e "\n"$(date) "Download Declarative Onboarding Pkg"
+curl -L -o ${libs_dir}/$DO_FN $DO_URL
+
+echo -e "\n"$(date) "Download AS3 Pkg"
+curl -L -o ${libs_dir}/$AS3_FN $AS3_URL
+
+echo -e "\n"$(date) "Download TS Pkg"
+curl -L -o ${libs_dir}/$TS_FN $TS_URL
+
+echo -e "\n"$(date) "Download CFE Pkg"
+curl -L -o ${libs_dir}/$CFE_FN $CFE_URL
+
+sleep 20
+
+# Copy the RPM Pkg to the file location
+cp ${libs_dir}/*.rpm /var/config/rest/downloads/
+
+# Install Declarative Onboarding Pkg
+DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$DO_FN\"}"
+echo -e "\n"$(date) "Install DO Pkg"
+restcurl -X POST "shared/iapp/package-management-tasks" -d $DATA
+
+# Install AS3 Pkg
+DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$AS3_FN\"}"
+echo -e "\n"$(date) "Install AS3 Pkg"
+restcurl -X POST "shared/iapp/package-management-tasks" -d $DATA
+
+# Install TS Pkg
+DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$TS_FN\"}"
+echo -e "\n"$(date) "Install TS Pkg"
+restcurl -X POST "shared/iapp/package-management-tasks" -d $DATA
+
+# Install CFE Pkg
+DATA="{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/$CFE_FN\"}"
+echo -e "\n"$(date) "Install CFE Pkg"
+restcurl -X POST "shared/iapp/package-management-tasks" -d $DATA
+
+# Disable Phone Home to workaround bug in DO 1.9.  Should be fixed in 1.10
+tmsh modify sys software update auto-phonehome disabled
+tmsh save sys config
+
+date
+echo "FINISHED STARTUP SCRIPT"
+
+### Clean up
+rm /config/cloud/startup-script.sh 
+EOF
+
+# Now run in the background to not block startup
+chmod 755 /config/cloud/startup-script.sh 
+nohup /config/cloud/startup-script.sh &

@@ -1,10 +1,10 @@
 resource "aws_instance" "vault" {
-  ami                    = "${data.aws_ami.ubuntu.id}"
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = "m5.large"
   private_ip             = "10.0.0.130"
-  subnet_id              = "${module.vpc.public_subnets[0]}"
+  subnet_id              = module.vpc.public_subnets[0]
   vpc_security_group_ids = ["${aws_security_group.vault.id}"]
-  key_name = "${aws_key_pair.demo.key_name}"
+  key_name = aws_key_pair.demo.key_name
   tags = {
     Name = "${var.prefix}-vault"
     Env  = "vault"
@@ -13,9 +13,9 @@ resource "aws_instance" "vault" {
 
 module "install_vault" {
   source          = "git::https://github.com/timarenz/terraform-ssh-vault.git?ref=v0.1.0"
-  host            = "${aws_instance.vault.public_ip}"
+  host            = aws_instance.vault.public_ip
   username        = "ubuntu"
-  ssh_private_key = "${tls_private_key.demo.private_key_pem}"
+  ssh_private_key = tls_private_key.demo.private_key_pem
   vault_version   = "1.4.2"
   address         = "${aws_instance.vault.private_ip}:8200"
 }
@@ -33,7 +33,7 @@ resource "null_resource" "vault_init" {
     }
   }
   provisioner "local-exec" {
-    when    = "destroy"
+    when    = destroy
     command = "rm -f vault.key vault.token"
   }
 }
@@ -52,7 +52,7 @@ data "template_file" "tfvars-vault" {
 }
 
 resource "local_file" "tfvars-vault" {
-  content  = "${data.template_file.tfvars-vault.rendered}"
+  content  = data.template_file.tfvars-vault.rendered
   filename = "../as3-secure/1-vault-pki/terraform.tfvars"
 }
 
@@ -69,6 +69,6 @@ data "template_file" "tfvars-vaultf5" {
 }
 
 resource "local_file" "tfvars-vaultf5" {
-  content  = "${data.template_file.tfvars-vaultf5.rendered}"
+  content  = data.template_file.tfvars-vaultf5.rendered
   filename = "../as3-secure/2-as3/terraform.tfvars"
 }
